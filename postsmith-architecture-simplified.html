@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<!-- WATERMARK_PC_v1 -->
+<!--
+  ============================================================
+  Author:    Paul Colmer
+  Role:      AWS Senior Technical Trainer
+  Copyright: (c) 2026 Paul Colmer. All rights reserved.
+  Notice:    Simplified conference view, derived from
+             postsmith-architecture-whiteboard.html by the same author.
+             Re-use without attribution is not permitted.
+  Signature: PC-WM-QXV0aG9yOlBhdWwgQ29sbWVyO1llYXI6MjAyNjtSZXBvOkludGVyYWN0aXZlIFdoaXRlYm9hcmRz
+  ============================================================
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Paul Colmer">
+<meta name="copyright" content="(c) 2026 Paul Colmer">
+<meta name="dcterms.creator" content="Paul Colmer">
+<meta name="x-pc-signature" content="PC-WM-QXV0aG9yOlBhdWwgQ29sbWVyO1llYXI6MjAyNjtSZXBvOkludGVyYWN0aXZlIFdoaXRlYm9hcmRz">
+<title>PostSmith &mdash; Core Architecture (Conference View)</title>
+<style>
+:root{
+  --navy:#232f3e; --orange:#ff9900; --teal:#00a4a6; --green:#1d8348; --purple:#7b2cbf;
+  --bg:#f5f7fa; --card:#fff; --ink:#232f3e; --muted:#5a6776; --line:#d6e0eb;
+}
+*{box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin:0;background:var(--bg);color:var(--ink);line-height:1.6}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#232f3e,#1a2330 55%,#0d1b2a);color:#fff;padding:64px 20px 52px;text-align:center}
+.hero-inner{max-width:1000px;margin:0 auto}
+.pill{display:inline-block;background:rgba(255,153,0,.15);color:#ffb84d;border:1px solid rgba(255,153,0,.4);
+  padding:6px 16px;border-radius:999px;font-size:.8em;letter-spacing:1px;margin-bottom:18px}
+h1{font-size:3.1em;margin:0 0 10px;font-weight:700;
+  background:linear-gradient(90deg,#ff9900,#ffb84d,#00d9db);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tag{font-size:1.15em;color:#c8d3df;max-width:720px;margin:0 auto}
+.hero-stats{margin-top:30px;display:flex;gap:40px;justify-content:center;flex-wrap:wrap}
+.hs .num{font-size:2.2em;font-weight:700;color:var(--orange);display:block;line-height:1}
+.hs .lbl{font-size:.78em;color:#c8d3df;letter-spacing:1px}
+
+.container{max-width:1180px;margin:0 auto;padding:56px 20px}
+section{margin-bottom:76px}
+.bar{display:inline-block;width:56px;height:5px;background:var(--orange);border-radius:3px;margin-bottom:12px}
+h2{font-size:2.1em;margin:0 0 6px;color:var(--navy)}
+.sub{color:var(--muted);font-size:1.05em;margin-bottom:28px;max-width:820px}
+
+/* SEAM + BRIDGE explainer cards.
+   Two cards, same shape: the seam is the fixed opening, the bridge is what
+   plugs into it. Each leads with a plain-language block and closes with the
+   one-line technical statement, so a non-technical reader gets the point
+   from the first paragraph and never has to decode the second. */
+.seam{background:linear-gradient(135deg,#232f3e,#2a374a);color:#fff;border-radius:14px;padding:26px 30px;border-left:6px solid var(--orange)}
+.seam + .seam{margin-top:20px}
+.seam h3{margin:0 0 8px;color:var(--orange);font-size:1.15em;letter-spacing:.5px}
+.seam code{display:block;font-family:Consolas,monospace;font-size:1.15em;color:#ffd79a;
+  background:rgba(0,0,0,.28);padding:14px 18px;border-radius:8px;margin:12px 0;overflow-x:auto}
+.seam p{margin:0 0 12px;color:#d8e1ec;font-size:.95em}
+.seam p:last-child{margin-bottom:0}
+.seam.is-bridge{border-left-color:var(--teal)}
+.seam.is-bridge h3{color:#4ddee0}
+
+/* The plain-language block. Deliberately the largest text in the card. */
+.plain{background:rgba(255,255,255,.07);border-left:3px solid rgba(255,153,0,.6);
+  padding:16px 20px;border-radius:8px;margin:14px 0 16px}
+.seam.is-bridge .plain{border-left-color:rgba(0,217,219,.6)}
+.plain b.lbl{display:block;color:#ffb84d;font-size:.74em;letter-spacing:1.3px;margin-bottom:8px}
+.seam.is-bridge .plain b.lbl{color:#4ddee0}
+.plain p{margin:0 0 11px;color:#eef3f9;font-size:1.02em;line-height:1.65}
+.plain p:last-child{margin-bottom:0}
+.plain em{color:#fff;font-style:normal;font-weight:600}
+.tech{font-size:.88em;color:#a9b8c9;padding-top:12px;border-top:1px solid rgba(255,255,255,.12)}
+.tech b{color:#c8d3df;font-weight:600}
+
+/* INTERACTIVE DIAGRAM */
+.click-hint{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#fff8e6,#fff);
+  border-left:5px solid var(--orange);padding:13px 18px;border-radius:9px;margin-bottom:16px;font-size:.95em}
+.click-hint .ci{font-size:1.4em;line-height:1}
+.click-hint b{color:var(--navy)}
+
+.board{background:linear-gradient(180deg,#0f1520,#0a0e16);border-radius:16px;padding:26px 22px;position:relative;overflow:hidden}
+.board::before{content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+  background-size:24px 24px;pointer-events:none}
+.board svg{display:block;width:100%;height:auto;position:relative}
+
+/* clickable nodes */
+.arch-node{cursor:pointer;transition:filter .2s,transform .2s;transform-origin:center;transform-box:fill-box}
+.arch-node rect{transition:stroke .2s,stroke-width .2s}
+.arch-node:hover{filter:drop-shadow(0 0 12px rgba(255,153,0,.75));transform:translateY(-2px)}
+.arch-node:hover rect{stroke:#ff9900;stroke-width:2.5}
+.arch-node:focus{outline:none}
+.arch-node:focus-visible rect{stroke:#fff;stroke-width:3}
+.arch-node.active rect{stroke:#ff9900;stroke-width:3.5}
+.arch-node text{pointer-events:none;user-select:none}
+.arch-node .tapdot{opacity:.55;transition:opacity .2s}
+.arch-node:hover .tapdot,.arch-node.active .tapdot{opacity:0}
+
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:18px;font-size:.83em;color:#c8d3df;position:relative}
+.legend div{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);padding:6px 14px;border-radius:999px}
+.sw{width:26px;height:3px;border-radius:2px}
+.sw.o{background:#ff9900}
+/* Dashed orange: an invocation that is designed but not yet built. Split out
+   from .sw.g because the previous revision used one dashed grey line for
+   "sequence", "invocation" and "not built yet" all at once, which is what made
+   the picture read as though the agents call each other. */
+.sw.od{background:linear-gradient(90deg,#ff9900 55%,transparent 55%);background-size:8px 3px}
+.sw.t{background:#00d9db}
+.sw.d{background:linear-gradient(90deg,#7fe0a8 55%,transparent 55%);background-size:8px 3px}
+.sw.g{background:linear-gradient(90deg,#5f6f85 55%,transparent 55%);background-size:8px 3px}
+.sw.gate{background:linear-gradient(90deg,#00d9db 55%,transparent 55%);background-size:6px 3px}
+
+/* SIDE-BY-SIDE: compressed diagram left, component text right - both on one screen */
+.arch-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr);gap:20px;align-items:start}
+@media (max-width:1040px){.arch-grid{grid-template-columns:1fr}}
+
+/* DETAIL PANEL */
+.detail{background:linear-gradient(135deg,#232f3e,#37475a);color:#fff;border-radius:14px;
+  padding:24px 26px;box-shadow:0 8px 28px rgba(0,0,0,.18);border-left:6px solid var(--orange);
+  transition:border-left-color .25s;
+  /* Bounded so the panel can never push the diagram off-screen; long
+     definitions scroll inside the panel instead. */
+  max-height:600px;overflow-y:auto}
+.detail::-webkit-scrollbar{width:8px}
+.detail::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22);border-radius:4px}
+.detail.is-fe{border-left-color:var(--purple)}
+.detail.is-br{border-left-color:var(--orange)}
+.detail.is-ag{border-left-color:var(--teal)}
+.detail .placeholder{color:rgba(255,255,255,.55);font-style:italic;text-align:center;padding:56px 20px;font-size:1.05em}
+.detail-head{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin-bottom:6px}
+.detail-head .ico{font-size:1.7em;line-height:1}
+.detail-head h3{margin:0;color:var(--orange);font-size:1.4em}
+.detail.is-fe .detail-head h3{color:#d4a3ff}
+.detail.is-ag .detail-head h3{color:#4ddee0}
+.badge{font-size:.68em;font-weight:700;letter-spacing:.9px;padding:4px 11px;border-radius:999px;text-transform:uppercase}
+.badge.built{background:rgba(29,131,72,.28);color:#7fe0a8;border:1px solid rgba(127,224,168,.45)}
+.badge.planned{background:rgba(255,255,255,.1);color:#b3bdcc;border:1px solid rgba(179,189,204,.35)}
+.detail .role{font-size:.78em;color:#ffb84d;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:16px}
+.detail.is-fe .role{color:#d4a3ff}
+.detail.is-ag .role{color:#4ddee0}
+.detail p{color:#d8e1ec;margin:0 0 12px;font-size:.95em}
+.detail .callout{background:rgba(255,255,255,.06);border-left:3px solid rgba(255,153,0,.55);
+  padding:12px 15px;border-radius:7px;margin:0 0 12px;font-size:.89em;color:#e3eaf3}
+.detail .callout b{display:block;color:#ffb84d;font-size:.76em;letter-spacing:1px;margin-bottom:4px}
+.detail.is-fe .callout{border-left-color:rgba(180,108,255,.55)}
+.detail.is-fe .callout b{color:#d4a3ff}
+.detail.is-ag .callout{border-left-color:rgba(0,217,219,.55)}
+.detail.is-ag .callout b{color:#4ddee0}
+.detail .stack{margin-top:18px;padding-top:15px;border-top:1px solid rgba(255,255,255,.14);font-size:.9em;color:#fff}
+.detail .stack b{display:block;color:#ffb84d;font-size:.74em;letter-spacing:1px;margin-bottom:4px}
+.detail code{font-family:Consolas,monospace;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px;color:#ffd79a;font-size:.92em}
+
+/* PIPELINE STRIP */
+.statusbar{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 22px}
+.skey{display:inline-flex;align-items:center;gap:8px;font-size:.86em;color:var(--navy);
+  background:var(--card);border:1px solid var(--line);padding:7px 14px;border-radius:999px}
+.dot{width:11px;height:11px;border-radius:50%}
+.dot.built{background:var(--green)}
+.dot.planned{background:#9aa8b8}
+.strip{display:flex;gap:0;flex-wrap:wrap;background:var(--card);border-radius:13px;padding:20px;box-shadow:0 4px 16px rgba(0,0,0,.06)}
+.step{flex:1 1 130px;text-align:center;padding:14px 10px;position:relative;min-width:130px}
+.step:not(:last-child)::after{content:'\2192';position:absolute;right:-9px;top:50%;transform:translateY(-50%);color:var(--orange);font-size:1.3em;font-weight:700}
+.step .ico{font-size:1.7em;display:block;margin-bottom:5px}
+.step .nm{font-weight:700;font-size:.93em;color:var(--navy);display:block}
+.step .st{font-size:.72em;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.step.is-built .nm{color:var(--green)}
+
+/* ABSTRACT */
+.abstract{background:var(--card);border-radius:14px;padding:32px 36px;box-shadow:0 6px 20px rgba(0,0,0,.07);
+  border-top:5px solid var(--orange);max-width:880px}
+.abstract p{font-size:1.03em;color:#2e3c4d}
+.abstract p:first-of-type{font-size:1.1em}
+.abstract .wc{margin-top:20px;padding-top:14px;border-top:1px solid #eef1f5;font-size:.82em;color:var(--muted)}
+
+footer{background:var(--navy);color:#9fb0c2;text-align:center;padding:26px 20px;font-size:.85em}
+footer b{color:var(--orange)}
+
+/* Print handout: reveal every definition as static cards */
+#printdefs{display:none}
+@media print{
+  body{background:#fff}
+  .board{background:#0f1520 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  section{page-break-inside:avoid}
+  .click-hint,.detail,.legend{display:none !important}
+  /* The seam and bridge cards are dark-on-light for the screen. Repaint them
+     for paper so the plain-language explanation survives a printed handout. */
+  .seam{background:#fff !important;color:#232f3e;border:1px solid #ccd6e0;border-left:6px solid #ff9900}
+  .seam.is-bridge{border-left-color:#00a4a6}
+  .seam h3{color:#b26a00}
+  .seam.is-bridge h3{color:#00787a}
+  .seam code{background:#f2f5f8 !important;color:#232f3e}
+  .seam p{color:#3d4a5c}
+  .plain{background:#f7f9fb;border-left-color:#ff9900}
+  .seam.is-bridge .plain{border-left-color:#00a4a6}
+  .plain p{color:#2e3c4d}
+  .plain b.lbl{color:#b26a00}
+  .seam.is-bridge .plain b.lbl{color:#00787a}
+  .plain em{color:#232f3e}
+  .tech{color:#5a6776;border-top-color:#e3e9ef}
+  .tech b{color:#232f3e}
+  #printdefs{display:grid !important;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+  #printdefs .pd{border:1px solid #ccd6e0;border-radius:9px;padding:14px 16px;page-break-inside:avoid}
+  #printdefs h4{margin:0 0 3px;font-size:1.02em;color:#232f3e}
+  #printdefs .pr{font-size:.72em;text-transform:uppercase;letter-spacing:.8px;color:#5a6776;margin-bottom:6px}
+  #printdefs p{margin:0 0 7px;font-size:.85em;color:#3d4a5c}
+  #printdefs .ps{font-size:.78em;color:#232f3e;border-top:1px solid #eef1f5;padding-top:6px}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <span class="pill">CONFERENCE VIEW &middot; CORE COMPONENTS ONLY</span>
+    <h1>PostSmith</h1>
+    <p class="tag">A human-in-the-loop agentic content pipeline. This view strips the architecture to
+      its load-bearing parts: the front-end, the bridge and what it retains, the orchestrator, and
+      the agents.</p>
+    <div class="hero-stats">
+      <div class="hs"><span class="num">1</span><span class="lbl">SEAM</span></div>
+      <div class="hs"><span class="num">2</span><span class="lbl">HUMAN GATES</span></div>
+      <div class="hs"><span class="num">6</span><span class="lbl">CORE AGENTS</span></div>
+      <div class="hs"><span class="num">5</span><span class="lbl">SPECS</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- INTERACTIVE DIAGRAM -->
+<section>
+  <div class="bar"></div>
+  <h2>Core architecture</h2>
+  <p class="sub">The front-end starts a run and the human approves the result. The bridge is the only
+    thing the browser talks to, and the only thing that invokes an agent &mdash; <b>no agent ever calls
+    another agent</b>. The grey lines show what runs next, not who calls whom. Two parts of this
+    picture carry everything else; the section below explains them in plain language.</p>
+
+  <div class="click-hint">
+    <span class="ci">&#x1F446;</span>
+    <span><b>Click any component</b> &mdash; the front-end, the bridge, the queue store, the orchestrator,
+      or any of the six agents &mdash; and its definition appears alongside, without leaving this screen.
+      Keyboard: <code>Tab</code> to move, <code>Enter</code> to select.</span>
+  </div>
+
+  <div class="arch-grid">
+
+    <div class="board">
+      <svg viewBox="0 0 900 560" role="group" aria-label="PostSmith core architecture. Interactive: select a component to read its definition.">
+        <defs>
+          <marker id="aD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#7fe0a8"/></marker>
+          <linearGradient id="gPurple" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#7b2cbf"/><stop offset="100%" stop-color="#5a1d91"/>
+          </linearGradient>
+          <linearGradient id="gOrange" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ff9900"/><stop offset="100%" stop-color="#d97f00"/>
+          </linearGradient>
+          <linearGradient id="gTeal" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#00a4a6"/><stop offset="100%" stop-color="#00787a"/>
+          </linearGradient>
+          <linearGradient id="gGrey" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3d4a5c"/><stop offset="100%" stop-color="#2b3543"/>
+          </linearGradient>
+          <marker id="aO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#ff9900"/></marker>
+          <marker id="aT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#00d9db"/></marker>
+          <marker id="aG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#6e7c91"/></marker>
+        </defs>
+
+        <!-- lane labels -->
+        <text x="105" y="22" text-anchor="middle" fill="#7f8fa4" font-size="10" letter-spacing="2">HUMAN</text>
+        <text x="315" y="22" text-anchor="middle" fill="#7f8fa4" font-size="10" letter-spacing="2">ADAPTERS</text>
+        <text x="585" y="22" text-anchor="middle" fill="#7f8fa4" font-size="10" letter-spacing="2">AGENTS</text>
+
+        <!-- ===== EDGES (under the nodes) =====
+             Four distinct meanings, four distinct styles. The previous revision used one
+             dashed grey arrow for "sequence", "invocation" and "not built yet" all at
+             once, and chained the agents with it, so the picture said the agents call
+             each other. They never have. Every agent is reached through the same fixed
+             opening, and the caller is always an adapter. -->
+
+        <!-- INVOCATION, built (solid orange) -->
+        <path d="M190,108 L226,108" stroke="#ff9900" stroke-width="2.5" fill="none" marker-end="url(#aO)"/>
+        <text x="208" y="100" text-anchor="middle" fill="#ffb84d" font-size="9">start run</text>
+        <path d="M400,102 C436,102 436,78 462,78" stroke="#ff9900" stroke-width="2.5" fill="none" marker-end="url(#aO)"/>
+        <text x="430" y="64" text-anchor="middle" fill="#ffb84d" font-size="9">run()</text>
+
+        <!-- STREAM (teal) -->
+        <path d="M226,146 L194,146" stroke="#00d9db" stroke-width="2.5" fill="none" marker-end="url(#aT)"/>
+        <text x="209" y="164" text-anchor="middle" fill="#4ddee0" font-size="9">progress &middot; result</text>
+        <path d="M105,174 L105,194" stroke="#00d9db" stroke-width="2" fill="none" marker-end="url(#aT)"/>
+
+        <!-- RETAINED DATA (green). The bridge keeps the queue it streamed, and reads the
+             approved topics back out of it. This is the edge that answers "where does the
+             Researcher's input come from": from here, never from Trend Scout directly.
+             Dashed, because the hand-off is specified and not yet built - the same rule the
+             orange invocation edges follow, so one dash convention means one thing. -->
+        <path d="M290,172 L290,196" stroke="#7fe0a8" stroke-width="2" fill="none"
+              stroke-dasharray="6 4" marker-start="url(#aD)" marker-end="url(#aD)"/>
+
+        <!-- INVOCATION, designed (dashed orange). The bridge invokes the Researcher itself,
+             one call per approved topic. The Orchestrator takes over the deeper chain only
+             once there is a chain to sequence. -->
+        <path d="M400,138 C436,138 436,169 462,169" stroke="#ff9900" stroke-width="1.8" fill="none"
+              stroke-dasharray="6 4" marker-end="url(#aO)"/>
+        <text x="406" y="132" fill="#ffb84d" font-size="8.5">run(topic)</text>
+        <path d="M375,172 L375,282" stroke="#ff9900" stroke-width="1.6" fill="none"
+              stroke-dasharray="6 4" marker-end="url(#aO)"/>
+        <text x="380" y="222" fill="#ffb84d" font-size="8.5">on approval</text>
+        <path d="M400,300 C436,300 436,233 462,233" stroke="#ff9900" stroke-width="1.6" fill="none"
+              stroke-dasharray="6 4" marker-end="url(#aO)"/>
+        <path d="M400,314 C436,314 436,297 462,297" stroke="#ff9900" stroke-width="1.6" fill="none"
+              stroke-dasharray="6 4" marker-end="url(#aO)"/>
+        <path d="M400,328 C436,328 436,361 462,361" stroke="#ff9900" stroke-width="1.6" fill="none"
+              stroke-dasharray="6 4" marker-end="url(#aO)"/>
+        <path d="M400,342 C436,342 436,449 462,449" stroke="#ff9900" stroke-width="1.6" fill="none"
+              stroke-dasharray="6 4" marker-end="url(#aO)"/>
+
+        <!-- SEQUENCE (dashed grey): who runs next. Deliberately NOT an invocation. -->
+        <path d="M585,108 L585,142" stroke="#6e7c91" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#aG)"/>
+        <path d="M585,194 L585,206" stroke="#6e7c91" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#aG)"/>
+        <path d="M585,258 L585,270" stroke="#6e7c91" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#aG)"/>
+        <path d="M585,322 L585,334" stroke="#6e7c91" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#aG)"/>
+        <path d="M585,386 L585,422" stroke="#6e7c91" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#aG)"/>
+
+        <!-- Critic -> Writer revision cycle: also sequence, not invocation -->
+        <path d="M700,361 C734,361 734,297 704,297" stroke="#6e7c91" stroke-width="2" fill="none"
+              stroke-dasharray="5 4" marker-end="url(#aG)"/>
+        <text x="740" y="332" fill="#8d9cb0" font-size="9">revise</text>
+
+        <!-- HUMAN GATES, drawn ON the sequence they gate. Previously the approval box hung
+             off the Front-End in the margin with nothing downstream of it, so the agent
+             chain visibly flowed straight past the gate it is supposed to wait at. -->
+        <path d="M716,127 L592,127" stroke="#00d9db" stroke-width="1.4" fill="none" stroke-dasharray="3 3"/>
+        <rect x="716" y="110" width="176" height="34" rx="8" fill="rgba(0,217,219,.08)"
+              stroke="#00d9db" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <text x="804" y="125" text-anchor="middle" fill="#4ddee0" font-size="10" font-weight="700">&#x2460; HUMAN GATE</text>
+        <text x="804" y="138" text-anchor="middle" fill="#8fd9da" font-size="9">which topics</text>
+
+        <path d="M716,403 L592,403" stroke="#00d9db" stroke-width="1.4" fill="none" stroke-dasharray="3 3"/>
+        <rect x="716" y="386" width="176" height="34" rx="8" fill="rgba(0,217,219,.08)"
+              stroke="#00d9db" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <text x="804" y="401" text-anchor="middle" fill="#4ddee0" font-size="10" font-weight="700">&#x2461; HUMAN GATE</text>
+        <text x="804" y="414" text-anchor="middle" fill="#8fd9da" font-size="9">which draft</text>
+
+        <!-- ===== CLICKABLE NODES ===== -->
+        <g class="arch-node" data-id="frontend" tabindex="0" role="button" aria-label="Front-End, Review Console. Select for definition.">
+          <rect x="20" y="86" width="170" height="86" rx="11" fill="url(#gPurple)" stroke="rgba(255,255,255,.25)" stroke-width="1"/>
+          <text x="105" y="116" text-anchor="middle" fill="#fff" font-size="20">&#x1F5A5;&#xFE0F;</text>
+          <text x="105" y="141" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">Front-End</text>
+          <text x="105" y="158" text-anchor="middle" fill="#e0d2f2" font-size="10.5">Review Console</text>
+          <circle class="tapdot" cx="178" cy="98" r="3.5" fill="#fff"/>
+        </g>
+
+        <g class="arch-node" data-id="bridge" tabindex="0" role="button" aria-label="Bridge, FastAPI and Server-Sent Events. Select for definition.">
+          <rect x="230" y="86" width="170" height="86" rx="11" fill="url(#gOrange)" stroke="rgba(255,255,255,.25)" stroke-width="1"/>
+          <text x="315" y="116" text-anchor="middle" fill="#fff" font-size="20">&#x1F50C;</text>
+          <text x="315" y="141" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">Bridge</text>
+          <text x="315" y="158" text-anchor="middle" fill="#4a2e00" font-size="10.5">FastAPI + SSE</text>
+          <circle class="tapdot" cx="388" cy="98" r="3.5" fill="#fff"/>
+        </g>
+
+        <g class="arch-node" data-id="queuestore" tabindex="0" role="button" aria-label="Queue Store. Select for definition.">
+          <rect x="230" y="196" width="120" height="58" rx="10" fill="url(#gGrey)" stroke="#7fe0a8" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <text x="290" y="218" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">&#x1F5C4;&#xFE0F; Queue Store</text>
+          <text x="290" y="234" text-anchor="middle" fill="#9fe8c0" font-size="8.5">the queue the bridge kept</text>
+          <text x="290" y="246" text-anchor="middle" fill="#9fe8c0" font-size="8.5">+ what the human approved</text>
+          <circle class="tapdot" cx="340" cy="206" r="3" fill="#fff"/>
+        </g>
+
+        <g class="arch-node" data-id="orchestrator" tabindex="0" role="button" aria-label="Orchestrator, designed. Select for definition.">
+          <rect x="230" y="282" width="170" height="70" rx="11" fill="url(#gGrey)" stroke="#ff9900" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <text x="315" y="307" text-anchor="middle" fill="#fff" font-size="16">&#x1F9ED;</text>
+          <text x="315" y="327" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Orchestrator</text>
+          <text x="315" y="342" text-anchor="middle" fill="#b3bdcc" font-size="8.5">Strands Graph &middot; designed</text>
+          <circle class="tapdot" cx="388" cy="292" r="3" fill="#fff"/>
+        </g>
+
+        <g class="arch-node" data-id="scout" tabindex="0" role="button" aria-label="Trend Scout agent, built. Select for definition.">
+          <rect x="470" y="50" width="230" height="56" rx="10" fill="url(#gTeal)" stroke="#1d8348" stroke-width="3"/>
+          <text x="585" y="76" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">&#x1F52D;  Trend Scout</text>
+          <text x="585" y="93" text-anchor="middle" fill="#b9f2d5" font-size="9.5">BUILT &middot; AgentCore Runtime</text>
+          <circle class="tapdot" cx="688" cy="62" r="3.5" fill="#fff"/>
+        </g>
+
+        <g class="arch-node" data-id="researcher" tabindex="0" role="button" aria-label="Researcher agent, designed. Select for definition.">
+          <rect x="470" y="146" width="230" height="46" rx="9" fill="url(#gGrey)" stroke="rgba(255,255,255,.2)" stroke-width="1"/>
+          <text x="585" y="175" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">&#x1F52C;  Researcher</text>
+          <circle class="tapdot" cx="688" cy="157" r="3" fill="#fff"/>
+        </g>
+
+        <g class="arch-node" data-id="strategist" tabindex="0" role="button" aria-label="Strategist agent, designed. Select for definition.">
+          <rect x="470" y="210" width="230" height="46" rx="9" fill="url(#gGrey)" stroke="rgba(255,255,255,.2)" stroke-width="1"/>
+          <text x="585" y="239" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">&#x1F3AF;  Strategist</text>
+          <circle class="tapdot" cx="688" cy="221" r="3" fill="#fff"/>
+        </g>
+
+        <g class="arch-node" data-id="writer" tabindex="0" role="button" aria-label="Writer agent, designed. Select for definition.">
+          <rect x="470" y="274" width="230" height="46" rx="9" fill="url(#gGrey)" stroke="rgba(255,255,255,.2)" stroke-width="1"/>
+          <text x="585" y="303" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">&#x270D;&#xFE0F;  Writer</text>
+          <circle class="tapdot" cx="688" cy="285" r="3" fill="#fff"/>
+        </g>
+
+        <g class="arch-node" data-id="critic" tabindex="0" role="button" aria-label="Critic agent, designed. Select for definition.">
+          <rect x="470" y="338" width="230" height="46" rx="9" fill="url(#gGrey)" stroke="rgba(255,255,255,.2)" stroke-width="1"/>
+          <text x="585" y="367" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">&#x2696;&#xFE0F;  Critic</text>
+          <circle class="tapdot" cx="688" cy="349" r="3" fill="#fff"/>
+        </g>
+
+        <g class="arch-node" data-id="scheduler" tabindex="0" role="button" aria-label="Scheduler agent, designed. Select for definition.">
+          <rect x="470" y="426" width="230" height="46" rx="9" fill="url(#gGrey)" stroke="rgba(255,255,255,.2)" stroke-width="1"/>
+          <text x="585" y="455" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">&#x1F5D3;&#xFE0F;  Scheduler</text>
+          <circle class="tapdot" cx="688" cy="437" r="3" fill="#fff"/>
+        </g>
+
+        <text x="585" y="496" text-anchor="middle" fill="#8d9cb0" font-size="9.5">grey fill &mdash; designed, not yet built</text>
+
+        <!-- annotation, not a clickable component -->
+        <rect x="20" y="196" width="170" height="104" rx="10" fill="none" stroke="#00d9db" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="105" y="218" text-anchor="middle" fill="#4ddee0" font-size="11.5" font-weight="700">Human approval</text>
+        <text x="105" y="236" text-anchor="middle" fill="#8fd9da" font-size="9.5">&#x2460; topics &middot; &#x2461; draft</text>
+        <text x="105" y="258" text-anchor="middle" fill="#8fd9da" font-size="9.5">every topic starts excluded</text>
+        <text x="105" y="273" text-anchor="middle" fill="#8fd9da" font-size="9.5">the human opts in</text>
+        <text x="105" y="291" text-anchor="middle" fill="#8fd9da" font-size="9.5">only identities are sent back</text>
+      </svg>
+
+      <div class="legend">
+        <div><span class="sw o"></span> Invocation &mdash; who calls whom</div>
+        <div><span class="sw od"></span> Invocation, designed</div>
+        <div><span class="sw t"></span> Stream &mdash; progress, then one terminal result</div>
+        <div><span class="sw d"></span> Retained data, designed</div>
+        <div><span class="sw g"></span> Sequence &mdash; who runs next</div>
+        <div><span class="sw gate"></span> Human gate</div>
+      </div>
+    </div>
+
+    <!-- component text, sits beside the diagram; populated on click -->
+    <div class="detail" id="detail" aria-live="polite">
+      <div class="placeholder">Select a component in the diagram to see what it does.</div>
+    </div>
+
+  </div>
+
+  <!-- print-only: all definitions, generated from the same data -->
+  <div id="printdefs"></div>
+</section>
+
+<!-- THE SEAM + THE BRIDGE -->
+<section>
+  <div class="bar"></div>
+  <h2>The one idea, and the piece that proves it</h2>
+  <p class="sub">Two things in the diagram above carry the whole architecture: a fixed opening that
+    the agents are reached through, and one small piece of software that plugs a browser into it.
+    Everything else is detail.</p>
+
+  <div class="seam">
+    <h3>THE SEAM &middot; THE FIXED OPENING</h3>
+    <code>run(config, invocation_state=None, *, progress_callback=None)</code>
+
+    <div class="plain">
+      <b class="lbl">IN PLAIN TERMS</b>
+      <p>A seam is one agreed opening where two halves of a system meet, and its shape never
+        changes. Think of the serving hatch in a restaurant kitchen. Waiters never walk into the
+        kitchen, chefs never walk into the dining room, and every order and every finished plate
+        crosses at the hatch.</p>
+      <p>Because the hatch keeps the same shape, you can redecorate the dining room, swap the
+        waiters for a delivery app, or move the kitchen to another building, and nobody has to
+        reinvent how food gets ordered.</p>
+      <p>Here the hatch is a single instruction: <em>hand the agent a job description, get back a
+        finished, ranked list.</em> That shape was agreed on day one and has not changed since. A
+        web page, a laptop launcher and a managed AWS service have all been attached to it, and
+        not one of them required a change to the agent doing the work.</p>
+      <p>That is the payoff, and it is worth being blunt about: get the opening right early and
+        every new feature simply attaches to it. Get it wrong and every new feature becomes
+        surgery on the part that already works.</p>
+    </div>
+
+    <p class="tech"><b>In technical terms:</b> one synchronous, orchestrator-agnostic call. Three
+      independent adapters, zero changes to the pipeline. It is also why a human clicking a button
+      can stand in for a scheduled orchestrator without the agents noticing the difference.</p>
+  </div>
+
+  <div class="seam is-bridge">
+    <h3>THE BRIDGE &middot; WHAT PLUGS INTO THE OPENING</h3>
+
+    <div class="plain">
+      <b class="lbl">IN PLAIN TERMS</b>
+      <p>The agent works like a colleague who disappears for two minutes and comes back with a
+        finished report. There is nothing to see until it lands. A browser needs the opposite:
+        something visible every few seconds, or the person watching assumes it has frozen.</p>
+      <p>The bridge is the member of staff standing at the hatch. It carries the request in, calls
+        out what the agent is doing while it is doing it &mdash; gathering stories, dropping ones
+        already covered, scoring, ranking &mdash; so the screen fills in live, then brings the
+        finished list back out. <em>The agent never had to learn how to talk to a browser. The
+        bridge absorbed the entire difference.</em></p>
+      <p>It is also the locked door. The browser only ever speaks to the bridge, so the keys to the
+        AWS account stay on the far side of the hatch and never reach anyone's screen. A web page
+        cannot ask for a real, billable run; only the server side gets to decide that.</p>
+      <p>And whether a run succeeds or fails, the answer comes back in the same shape: a list that
+        is either full or empty, plus a note if something went wrong. One thing to read, never
+        two.</p>
+    </div>
+
+    <p class="tech"><b>In technical terms:</b> FastAPI and Server-Sent Events. A per-request queue,
+      worker thread and cancel flag turn one blocking call into a live event stream. AWS credentials
+      resolve server-side only, and the front-end cannot request a live run. Bound to loopback and
+      unauthenticated on purpose, because it is a local development surface.</p>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section>
+  <div class="bar"></div>
+  <h2>The agent pipeline</h2>
+  <p class="sub">Six core agents. One is running on Bedrock AgentCore Runtime; the rest are specified
+    and waiting behind the same seam.</p>
+  <div class="statusbar">
+    <span class="skey"><span class="dot built"></span> Built and deployed</span>
+    <span class="skey"><span class="dot planned"></span> Designed, not yet built</span>
+  </div>
+  <div class="strip">
+    <div class="step is-built"><span class="ico">&#x1F52D;</span><span class="nm">Trend Scout</span><span class="st">Built</span></div>
+    <div class="step"><span class="ico">&#x1F52C;</span><span class="nm">Researcher</span><span class="st">Designed</span></div>
+    <div class="step"><span class="ico">&#x1F3AF;</span><span class="nm">Strategist</span><span class="st">Designed</span></div>
+    <div class="step"><span class="ico">&#x270D;&#xFE0F;</span><span class="nm">Writer</span><span class="st">Designed</span></div>
+    <div class="step"><span class="ico">&#x2696;&#xFE0F;</span><span class="nm">Critic</span><span class="st">Designed</span></div>
+    <div class="step"><span class="ico">&#x1F5D3;&#xFE0F;</span><span class="nm">Scheduler</span><span class="st">Designed</span></div>
+  </div>
+</section>
+
+<!-- ABSTRACT -->
+<section>
+  <div class="bar"></div>
+  <h2>Talk abstract</h2>
+  <p class="sub">Breakfast session &middot; approximately 40 minutes.</p>
+  <div class="abstract">
+    <p><b>Find the seam first: building an agentic system that survived three rewrites of everything
+      around it.</b></p>
+
+    <p>AWS ships around 3,000 announcements a year. A practitioner who wants to post about them in
+      their own voice, without getting facts wrong, has effectively taken on a second job &mdash; and
+      generic AI tools produce bland, off-brand, occasionally incorrect output. PostSmith was built
+      to solve that. This talk is not about the prompt. It is about the seam.</p>
+
+    <p>PostSmith grew across five specifications, and every one plugged into a single Python function
+      signature decided on day one and never changed. Three later features &mdash; a browser interface, a
+      local launcher, and a managed AWS runtime on Bedrock AgentCore &mdash; each attached to that one
+      callable as an independent adapter. None of them modified the agent.</p>
+
+    <p>We will walk the arc. Act one builds the agent deliberately unplugged: ports and adapters for
+      feeds, model, and storage, so the entire pipeline runs offline on fixtures with no AWS account.
+      Act two builds the human review surface against mock data, before any wiring exists at all. Act
+      three connects the two with a streaming bridge, touching neither side. Act four is a launcher &mdash;
+      the boring spec with the sharpest edges, where reliably killing a process tree turned out to be
+      genuinely hard. Act five deploys the agent to AgentCore Runtime, where the additive-adapter
+      pattern pays for itself: no new credential code, no pipeline changes.</p>
+
+    <p>Along the way: why determinism is a feature, why every proposed topic starts excluded so the
+      human opts in rather than out, why every failure is shaped exactly like a success, and what we
+      found when the deployed agent turned out to be emitting no traces at all.</p>
+
+    <p>You will leave with a method: find the seam first, keep an offline path behind every port, and
+      write down the decisions you rejected.</p>
+
+    <div class="wc">295 words, excluding the title.</div>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <b>PostSmith</b> &mdash; simplified conference view &middot; derived from the PostSmith architecture whiteboard<br>
+  Author: <b>Paul Colmer</b>, AWS Senior Technical Trainer &middot; &copy; 2026 Paul Colmer. All rights reserved.
+</footer>
+
+<script>
+/* ============================================================
+   Author: Paul Colmer | (c) 2026 Paul Colmer
+   Single source of truth for every component definition.
+   Drives both the click-to-reveal detail panel and the
+   print-only handout grid, so the two can never drift.
+   ============================================================ */
+const components = {
+  frontend: {
+    kind: 'fe', ico: '&#x1F5A5;&#xFE0F;', name: 'Front-End', status: 'built',
+    role: 'Review Console &middot; the human\'s place to stand',
+    body: [
+      'The human-in-the-loop surface, and in this architecture the thing that <b>starts</b> a run &mdash; taking the place of a scheduled orchestrator. It renders live progress while the agent works, then presents the ranked topic queue for approval.',
+      'Every topic arrives <b>excluded</b>. The human opts topics in one at a time. An agent proposes; it does not get consent by default.'
+    ],
+    callout: { label: 'BOUNDARY', text: 'Talks to exactly one thing &mdash; the bridge &mdash; behind a single port. Display components never learn which implementation supplied their data, so the same UI runs against mock data or a live agent with no code change.' },
+    stack: 'React 18 &middot; TypeScript &middot; Vite &middot; Tailwind. Static build, no SSR.'
+  },
+  bridge: {
+    kind: 'br', ico: '&#x1F50C;', name: 'Bridge', status: 'built',
+    role: 'Adapter &middot; the only thing the browser talks to',
+    body: [
+      'The member of staff standing at the serving hatch. It carries the request in, calls out what the agent is doing while it is still working so the screen can fill in live, and brings the finished list back out. <b>The agent only speaks at the end; the bridge narrates the middle.</b>',
+      'Underneath, it translates between the browser\'s need for a live stream and the agent\'s single blocking call. Each request gets its own queue, worker thread, and cancel flag, so the agent stayed synchronous and unmodified while the adapter absorbed the whole mismatch.',
+      'It is also the locked door. AWS credentials resolve <b>server-side only</b>; the front-end can neither see a secret nor ask for a live run.'
+    ],
+    callout: { label: 'CONTRACT', text: 'Zero or more <code>progress</code> events, then exactly one terminal event: <code>result</code> or <code>run_error</code>. Every failure &mdash; bad input, dropped connection, agent error &mdash; arrives in the success shape with an empty queue and a populated error list. Callers check one field and never parse a second schema.' },
+    stack: 'Python &middot; FastAPI &middot; Server-Sent Events.'
+  },
+  queuestore: {
+    /* Designed, not built: the Bridge has no store module and the front-end has no
+       decision port yet. The badge tracks the code, not the specification. */
+    kind: 'br', ico: '&#x1F5C4;&#xFE0F;', name: 'Queue Store', status: 'planned',
+    role: 'Adapter &middot; where the approved list lives',
+    body: [
+      'The bridge keeps the ranked queue it just streamed, and records which topics the human ticked in. That is the whole job, and it exists to answer one question: <b>where does the next agent get its input?</b>',
+      'From here. The browser sends back only the <b>identities</b> of the topics the human chose &mdash; never the topics themselves. The bridge resolves those against its own copy and refuses anything that does not match, so a stale browser tab cannot get something researched that Trend Scout never proposed.'
+    ],
+    callout: { label: 'WHY NOT SEND THE TOPICS BACK', text: 'A page that is not allowed to choose whether a run costs real money is certainly not allowed to dictate what gets researched. Sending the choice rather than the goods also keeps the field-name translation one-way, which is why it stays small enough to test exhaustively.' },
+    stack: 'Python &middot; in-memory behind a port, so a durable store drops in later without touching a caller.'
+  },
+  orchestrator: {
+    kind: 'br', ico: '&#x1F9ED;', name: 'Orchestrator', status: 'planned',
+    role: 'Adapter &middot; sequences the unattended middle',
+    body: [
+      'The piece that will run the agents sitting <b>between</b> the two human gates. Once topics are approved, Researcher, Strategist, Writer and Critic run with nobody watching, so something has to decide what goes next and carry the state between them.',
+      'It is a separate box on purpose, because it makes the important claim visible: <b>no agent ever calls another agent.</b> Each one is still reached through the same fixed opening. The orchestrator does the sequencing, which is why the agents stay ignorant of each other and independently testable.'
+    ],
+    callout: { label: 'NOT BUILT YET, AND THAT IS DELIBERATE', text: 'It exists to sequence a chain, and until the Strategist, Writer and Critic are real the Researcher is the only agent after the first gate. So the bridge invokes the Researcher directly for now. When the chain exists, the bridge invokes this instead. The loop moves; nothing else does.' },
+    stack: 'Strands Agents SDK &middot; Graph pattern &middot; shared <code>invocation_state</code>.'
+  },
+  scout: {
+    kind: 'ag', ico: '&#x1F52D;', name: 'Trend Scout', status: 'built',
+    role: 'Core agent 1 &middot; topic discovery',
+    body: [
+      'Collects candidate stories from live AWS and community feeds, deduplicates them against an archive of what has already been covered, scores each one with a foundation model, ranks the survivors, and emits a top-ten topic queue.',
+      'Determinism is treated as a feature: temperature zero, scores clamped to a fixed range, documented fallback scores, and a hash tie-break for strict total ordering. Same inputs, same queue, every time.'
+    ],
+    callout: { label: 'OFFLINE BY DEFAULT', text: 'Feeds, model, and storage each sit behind a port with both a real and an offline adapter. Flip one flag and the whole pipeline runs on local fixtures &mdash; no AWS account, no network.' },
+    stack: 'Python &middot; Amazon Bedrock scoring &middot; DynamoDB archive &middot; deployed to Bedrock AgentCore Runtime.'
+  },
+  researcher: {
+    kind: 'ag', ico: '&#x1F52C;', name: 'Researcher', status: 'planned',
+    role: 'Core agent 2 &middot; authoritative grounding',
+    body: [
+      'Takes one approved topic and deep-dives it against live, authoritative AWS documentation rather than model recall, then compacts the findings into a tight brief for the agents downstream.',
+      'Cites every claim. Those citations are what makes the Critic\'s fact-check possible later, so this agent\'s output is a dependency, not a nicety.',
+      'One topic per run, deliberately. If one topic fails you know which one and can retry just that one; a batch that fails halfway has no clean way to describe what it produced.'
+    ],
+    callout: { label: 'WHERE ITS INPUT COMES FROM', text: 'The bridge, not Trend Scout. Trend Scout has already finished by the time this runs &mdash; the two are separate runs with a human decision between them, and neither agent holds a reference to the other. The bridge reads the approved topic out of the Queue Store and hands it over.' },
+    stack: 'AgentCore Runtime &middot; AWS Documentation MCP server.'
+  },
+  strategist: {
+    kind: 'ag', ico: '&#x1F3AF;', name: 'Strategist', status: 'planned',
+    role: 'Core agent 3 &middot; angle and format',
+    body: [
+      'Decides how the story should be told: the angle, the hook archetype, and the post format. Its choice narrows what the Writer is permitted to do, which keeps drafting focused instead of open-ended.',
+      'Reads the author\'s voice profile to make that call, so format selection is grounded in what has actually performed rather than a generic template.'
+    ],
+    stack: 'AgentCore Runtime.'
+  },
+  writer: {
+    kind: 'ag', ico: '&#x270D;&#xFE0F;', name: 'Writer', status: 'planned',
+    role: 'Core agent 4 &middot; drafting in voice',
+    body: [
+      'Produces several draft variants in the author\'s own voice under a hard character limit, few-shot prompted with their top-performing past posts.',
+      'Several variants rather than one, deliberately: it gives the human something to choose between at the approval gate instead of a single take-it-or-leave-it draft.'
+    ],
+    stack: 'AgentCore Runtime &middot; Amazon Bedrock.'
+  },
+  critic: {
+    kind: 'ag', ico: '&#x2696;&#xFE0F;', name: 'Critic', status: 'planned',
+    role: 'Core agent 5 &middot; the quality gate',
+    body: [
+      'Model-as-judge. Checks each draft\'s claims against the Researcher\'s citations and scores hook strength against a rubric.',
+      'The important part is what happens on failure: below threshold it sends the draft <b>back to the Writer</b> for revision rather than shipping it. A deliberate cycle, and the reason a weak draft never reaches the human silently.'
+    ],
+    stack: 'AgentCore Runtime.'
+  },
+  scheduler: {
+    kind: 'ag', ico: '&#x1F5D3;&#xFE0F;', name: 'Scheduler', status: 'planned',
+    role: 'Core agent 6 &middot; timing and queueing',
+    body: [
+      'Chooses a publish time from historical engagement patterns and writes the approved draft to the queue with that timestamp, handling timezones and avoiding collisions with already-queued posts.',
+      'Last agent in the path. It queues; it does not publish. Publication stays behind the human approval gate by design.'
+    ],
+    stack: 'AgentCore Runtime.'
+  }
+};
+
+const STATUS_LABEL = { built: 'Built', planned: 'Designed' };
+const panel = document.getElementById('detail');
+
+function render(id) {
+  const c = components[id];
+  if (!c) return;
+
+  panel.className = 'detail is-' + c.kind;
+  panel.innerHTML =
+    '<div class="detail-head">' +
+      '<span class="ico">' + c.ico + '</span>' +
+      '<h3>' + c.name + '</h3>' +
+      '<span class="badge ' + c.status + '">' + STATUS_LABEL[c.status] + '</span>' +
+    '</div>' +
+    '<div class="role">' + c.role + '</div>' +
+    c.body.map(p => '<p>' + p + '</p>').join('') +
+    (c.callout ? '<div class="callout"><b>' + c.callout.label + '</b>' + c.callout.text + '</div>' : '') +
+    '<div class="stack"><b>STACK</b>' + c.stack + '</div>';
+
+  document.querySelectorAll('.arch-node').forEach(n => {
+    const on = n.dataset.id === id;
+    n.classList.toggle('active', on);
+    n.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+
+document.querySelectorAll('.arch-node').forEach(node => {
+  node.setAttribute('aria-pressed', 'false');
+  node.addEventListener('click', () => render(node.dataset.id));
+  node.addEventListener('keydown', e => {
+    // Enter and Space activate, matching native button behaviour.
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      render(node.dataset.id);
+    }
+  });
+});
+
+/* Open on the Front-End so the panel is never empty: the point of the
+   side-by-side layout is that diagram and text are both on screen from the
+   start, and a placeholder would waste half of it. */
+render('frontend');
+
+/* Build the print-only handout from the same data, so a printed copy
+   carries every definition even though the panel shows one at a time. */
+document.getElementById('printdefs').innerHTML = Object.keys(components).map(k => {
+  const c = components[k];
+  return '<div class="pd">' +
+    '<h4>' + c.ico + ' ' + c.name + ' &mdash; ' + STATUS_LABEL[c.status] + '</h4>' +
+    '<div class="pr">' + c.role + '</div>' +
+    c.body.map(p => '<p>' + p + '</p>').join('') +
+    (c.callout ? '<p><b>' + c.callout.label + ':</b> ' + c.callout.text + '</p>' : '') +
+    '<div class="ps"><b>Stack:</b> ' + c.stack + '</div>' +
+  '</div>';
+}).join('');
+</script>
+
+</body>
+</html>
